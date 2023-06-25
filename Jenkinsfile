@@ -42,7 +42,13 @@ pipeline {
                 script {
                     sh '''
                         docker tag $IMAGE_NAME $PREFIX_IMAGE/$IMAGE_NAME:$IMAGE_TAG
-                        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                    '''
+                    withCredentials([usernameColonPassword(credentialsId: 'DOCKERHUB_KEY', variable: 'dockerhub_cred')]) {
+                        sh '''
+                            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $PREFIX_IMAGE -p ${dockerhub_cred}'
+                        '''
+                    }
+                    sh '''
                         docker push --all-tags ${IMAGE_NAME}
                     '''
                 }
