@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        curl http://3.95.39.174"
+                        curl http://3.95.39.174
                     '''
                 }
             }
