@@ -4,6 +4,8 @@ pipeline {
         IMAGE_TAG = "v3"
         PREFIX_IMAGE = "abodojustin"
         DOCKERHUB_CREDENTIALS = credentials('DOCKERHUB_KEY')
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
     agent none
     stages {
@@ -46,6 +48,24 @@ pipeline {
                         docker rm -f ${IMAGE_NAME}
                         echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
                         docker push $PREFIX_IMAGE/$IMAGE_NAME:$IMAGE_TAG
+                    '''
+                }
+            }
+        }
+        stage('Staging') {
+            when {
+                expression { GIT_BRANCH == 'origin/master' }
+            }
+            agent any
+            steps {
+                script {
+                    sh '''
+                        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                        aws configure set region us-east-1
+                        eb init --region us-east-1 --platform Docker website-staging_$BUILD_NUMBER
+                        eb create staging-env-$BUILD_NUMBER || echo "already exists."
+                        eb status
                     '''
                 }
             }
